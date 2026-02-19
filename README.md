@@ -31,6 +31,28 @@ Default port: **3000**.
 
 - `GET /health` — Health check
 - `GET /api` — API info
+- **Shop API** (for Store frontend):
+  - `GET /api/shop/categories` — Category tree
+  - `GET /api/shop/ads` — Ad slides
+  - `GET /api/shop/notices` — Important notices
+  - `GET /api/shop/products?id=...` — One product
+  - `GET /api/shop/products?ids=...` — Products by IDs
+  - `GET /api/shop/products?q=&sort=&category=&onsale=` — Filtered/sorted list
+  - `GET /api/shop/category?id=...` — Products in category (level1 id)
+  - `GET /api/shop/home` — `{ recommended, mostVisited, trending }` product arrays
+
+## Seed & migration
+
+```bash
+# Seed MongoDB with default shop data (categories, ads, notices, products, home sections)
+npm run seed
+
+# Optional: drop existing shop data before seeding
+npm run seed -- --drop
+
+# Ensure indexes exist (run after schema changes)
+npm run migrate
+```
 
 ## Environment
 

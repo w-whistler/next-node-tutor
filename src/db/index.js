@@ -5,6 +5,7 @@ function connect() {
   return mongoose.connect(config.mongoUri, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    useFindAndModify: false,
   });
 }
 
