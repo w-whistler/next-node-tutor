@@ -25,7 +25,13 @@ copy .env.example .env
 npm start
 ```
 
-Default port: **3000**.
+Default port: **3001** (so Store frontend can run on 3000). The server binds to `0.0.0.0` so it accepts connections from localhost and other interfaces.
+
+**If Store gets "connection refused":** ensure (1) this backend is running (`npm start`), (2) MongoDB is running, (3) Store’s `NEXT_PUBLIC_API_URL` is `http://localhost:3001` (or the port this backend logs on startup).
+
+## CORS
+
+The API sends CORS headers so the Store frontend can call it. Default allowed origins: `http://localhost:3000` and `http://127.0.0.1:3000`. Override with `CORS_ORIGIN` in `.env` (comma-separated).
 
 ## Endpoints
 
@@ -56,7 +62,8 @@ npm run migrate
 
 ## Environment
 
-| Variable      | Default                        | Description        |
-|---------------|--------------------------------|--------------------|
-| `PORT`        | `3000`                         | HTTP server port   |
-| `MONGODB_URI` | `mongodb://localhost:27017/store` | MongoDB connection |
+| Variable      | Default                        | Description                    |
+|---------------|--------------------------------|--------------------------------|
+| `PORT`        | `3001`                         | HTTP server port               |
+| `MONGODB_URI` | `mongodb://localhost:27017/store` | MongoDB connection          |
+| `CORS_ORIGIN` | `http://localhost:3000`        | Allowed origin(s), comma-separated |

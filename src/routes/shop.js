@@ -5,6 +5,7 @@ const Product = require('../models/Product');
 const AdSlide = require('../models/AdSlide');
 const Notice = require('../models/Notice');
 const HomeSection = require('../models/HomeSection');
+const logger = require('../lib/logger');
 
 const CACHE_HEADERS = { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' };
 
@@ -41,39 +42,55 @@ function filterAndSortProducts(list, params, recommendedOrder) {
 }
 
 router.get('/categories', function (req, res, next) {
+  logger.info('GET /api/shop/categories');
   CategoryTree.findOne({ key: 'default' })
     .lean()
     .then(function (doc) {
       const tree = (doc && doc.tree) ? doc.tree : [];
+      logger.info('GET /api/shop/categories -> 200, tree nodes=', tree.length);
       res.set(CACHE_HEADERS);
       res.json(tree);
     })
-    .catch(next);
+    .catch(function (err) {
+      logger.error('GET /api/shop/categories error', err.message);
+      next(err);
+    });
 });
 
 router.get('/ads', function (req, res, next) {
+  logger.info('GET /api/shop/ads');
   AdSlide.find({}).sort({ id: 1 }).lean()
     .then(function (docs) {
       const list = docs.map(function (d) {
         return { id: d.id, title: d.title || '', subtitle: d.subtitle || '', image: d.image || '' };
       });
+      logger.info('GET /api/shop/ads -> 200, count=', list.length);
       res.set(CACHE_HEADERS);
       res.json(list);
     })
-    .catch(next);
+    .catch(function (err) {
+      logger.error('GET /api/shop/ads error', err.message);
+      next(err);
+    });
 });
 
 router.get('/notices', function (req, res, next) {
+  logger.info('GET /api/shop/notices');
   Notice.find({}).sort({ id: 1 }).lean()
     .then(function (docs) {
       const list = docs.map(function (d) { return { id: d.id, text: d.text || '' }; });
+      logger.info('GET /api/shop/notices -> 200, count=', list.length);
       res.set(CACHE_HEADERS);
       res.json(list);
     })
-    .catch(next);
+    .catch(function (err) {
+      logger.error('GET /api/shop/notices error', err.message);
+      next(err);
+    });
 });
 
 router.get('/home', function (req, res, next) {
+  logger.info('GET /api/shop/home');
   HomeSection.findOne({ key: 'default' })
     .lean()
     .then(function (doc) {
@@ -88,24 +105,34 @@ router.get('/home', function (req, res, next) {
           const recommended = recommendedIds.map(function (id) { return byId[id]; }).filter(Boolean);
           const mostVisited = mostVisitedIds.map(function (id) { return byId[id]; }).filter(Boolean);
           const trending = trendingIds.map(function (id) { return byId[id]; }).filter(Boolean);
+          logger.info('GET /api/shop/home -> 200, recommended=', recommended.length, 'mostVisited=', mostVisited.length, 'trending=', trending.length);
           res.set(CACHE_HEADERS);
           res.json({ recommended, mostVisited, trending });
         });
     })
-    .catch(next);
+    .catch(function (err) {
+      logger.error('GET /api/shop/home error', err.message);
+      next(err);
+    });
 });
 
 router.get('/category', function (req, res, next) {
   const level1Id = req.query.id;
+  logger.info('GET /api/shop/category query.id=', level1Id);
   if (!level1Id || typeof level1Id !== 'string') {
+    logger.warn('GET /api/shop/category -> 400 Missing category id');
     return res.status(400).json({ error: 'Missing category id' });
   }
   Product.find({ categoryId: level1Id }).lean()
     .then(function (products) {
+      logger.info('GET /api/shop/category -> 200, categoryId=', level1Id, 'count=', products.length);
       res.set(CACHE_HEADERS);
       res.json(products);
     })
-    .catch(next);
+    .catch(function (err) {
+      logger.error('GET /api/shop/category error', err.message);
+      next(err);
+    });
 });
 
 router.get('/products', function (req, res, next) {
@@ -115,15 +142,23 @@ router.get('/products', function (req, res, next) {
   const q = req.query.q;
   const sort = req.query.sort;
   const onsale = req.query.onsale;
+  logger.info('GET /api/shop/products query=', { id: id || '-', ids: ids ? ids.substring(0, 50) + (ids.length > 50 ? '...' : '') : '-', category: categoryParam || '-', q: q || '-', sort: sort || '-', onsale: onsale || '-' });
 
   if (id && typeof id === 'string') {
     return Product.findOne({ id: id }).lean()
       .then(function (product) {
-        if (!product) return res.status(404).json({ error: 'Product not found' });
+        if (!product) {
+          logger.warn('GET /api/shop/products?id -> 404 product not found id=', id);
+          return res.status(404).json({ error: 'Product not found' });
+        }
+        logger.info('GET /api/shop/products?id -> 200 id=', id);
         res.set(CACHE_HEADERS);
         res.json(product);
       })
-      .catch(next);
+      .catch(function (err) {
+        logger.error('GET /api/shop/products?id error', err.message);
+        next(err);
+      });
   }
 
   if (ids) {
@@ -133,10 +168,14 @@ router.get('/products', function (req, res, next) {
         const byId = {};
         products.forEach(function (p) { byId[p.id] = p; });
         const ordered = idList.map(function (id) { return byId[id]; }).filter(Boolean);
+        logger.info('GET /api/shop/products?ids -> 200 requested=', idList.length, 'found=', ordered.length);
         res.set(CACHE_HEADERS);
         res.json(ordered);
       })
-      .catch(next);
+      .catch(function (err) {
+        logger.error('GET /api/shop/products?ids error', err.message);
+        next(err);
+      });
   }
 
   Product.find({}).lean()
@@ -145,11 +184,15 @@ router.get('/products', function (req, res, next) {
         .then(function (doc) {
           const recommendedOrder = (doc && doc.recommendedProductIds) ? doc.recommendedProductIds : [];
           const filtered = filterAndSortProducts(products, { q, sort, category: categoryParam, onsale }, recommendedOrder);
+          logger.info('GET /api/shop/products (list) -> 200 total=', products.length, 'filtered=', filtered.length, 'params=', { q: q || '-', sort: sort || '-', category: categoryParam || '-', onsale: onsale || '-' });
           res.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
           res.json(filtered);
         });
     })
-    .catch(next);
+    .catch(function (err) {
+      logger.error('GET /api/shop/products (list) error', err.message);
+      next(err);
+    });
 });
 
 module.exports = router;

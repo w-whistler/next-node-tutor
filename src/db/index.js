@@ -1,7 +1,9 @@
 const mongoose = require('mongoose');
 const config = require('../config');
+const logger = require('../lib/logger');
 
 function connect() {
+  logger.info('MongoDB connect() called, uri length=', (config.mongoUri || '').length);
   return mongoose.connect(config.mongoUri, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -10,15 +12,15 @@ function connect() {
 }
 
 mongoose.connection.on('connected', function () {
-  console.log('MongoDB connected to', config.mongoUri);
+  logger.info('MongoDB connected to', config.mongoUri);
 });
 
 mongoose.connection.on('error', function (err) {
-  console.error('MongoDB connection error:', err);
+  logger.error('MongoDB connection error:', err.message, err.stack);
 });
 
 mongoose.connection.on('disconnected', function () {
-  console.log('MongoDB disconnected');
+  logger.info('MongoDB disconnected');
 });
 
 module.exports = { connect };

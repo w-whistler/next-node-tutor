@@ -6,6 +6,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const config = require('../src/config');
+const logger = require('../src/lib/logger');
 const CategoryTree = require('../src/models/CategoryTree');
 const Product = require('../src/models/Product');
 const AdSlide = require('../src/models/AdSlide');
@@ -14,11 +15,12 @@ const HomeSection = require('../src/models/HomeSection');
 const seedData = require('../src/seed/data');
 
 const drop = process.argv.includes('--drop');
+logger.info('Seed script started, drop=', drop, 'mongoUri length=', (config.mongoUri || '').length);
 
 function run() {
   return mongoose.connect(config.mongoUri, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false })
     .then(function () {
-      console.log('Connected to', config.mongoUri);
+      logger.info('Seed: connected to MongoDB');
       if (drop) {
         return Promise.all([
           CategoryTree.deleteMany({}),
@@ -27,7 +29,7 @@ function run() {
           Notice.deleteMany({}),
           HomeSection.deleteMany({}),
         ]).then(function () {
-          console.log('Dropped existing shop collections.');
+          logger.info('Seed: dropped existing shop collections');
         });
       }
     })
@@ -39,25 +41,25 @@ function run() {
       );
     })
     .then(function () {
-      console.log('Upserted category tree.');
+      logger.info('Seed: upserted category tree, nodes=', seedData.categories.length);
       return Product.deleteMany({}).then(function () {
         return Product.insertMany(seedData.products);
       });
     })
     .then(function () {
-      console.log('Inserted', seedData.products.length, 'products.');
+      logger.info('Seed: inserted products, count=', seedData.products.length);
       return AdSlide.deleteMany({}).then(function () {
         return AdSlide.insertMany(seedData.adsSlides);
       });
     })
     .then(function () {
-      console.log('Inserted', seedData.adsSlides.length, 'ad slides.');
+      logger.info('Seed: inserted ad slides, count=', seedData.adsSlides.length);
       return Notice.deleteMany({}).then(function () {
         return Notice.insertMany(seedData.importantNotices);
       });
     })
     .then(function () {
-      console.log('Inserted', seedData.importantNotices.length, 'notices.');
+      logger.info('Seed: inserted notices, count=', seedData.importantNotices.length);
       return HomeSection.findOneAndUpdate(
         { key: 'default' },
         {
@@ -70,15 +72,17 @@ function run() {
       );
     })
     .then(function () {
-      console.log('Upserted home sections.');
-      console.log('Seed completed.');
+      logger.info('Seed: upserted home sections');
+      logger.info('Seed completed successfully');
     })
     .catch(function (err) {
-      console.error('Seed failed:', err);
+      logger.error('Seed failed:', err.message, err.stack);
       process.exit(1);
     })
     .finally(function () {
-      return mongoose.disconnect();
+      return mongoose.disconnect().then(function () {
+        logger.info('Seed: MongoDB disconnected');
+      });
     });
 }
 
