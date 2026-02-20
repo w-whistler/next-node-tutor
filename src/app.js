@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const config = require('./config');
 const logger = require('./lib/logger');
 
@@ -38,6 +39,9 @@ app.get('/health', function (req, res) {
   logger.info('GET /health -> 200');
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Serve uploaded files (product images, ad images)
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 app.use('/api', require('./routes'));
 

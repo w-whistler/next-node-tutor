@@ -29,7 +29,7 @@ router.post('/register', function (req, res, next) {
       logger.info('POST /api/auth/register -> 201 email=', email);
       res.status(201).json({
         token,
-        user: { id: user._id.toString(), email: user.email, name: user.name },
+        user: { id: user._id.toString(), email: user.email, name: user.name, role: user.role || 'user' },
       });
     })
     .catch(function (err) {
@@ -70,7 +70,7 @@ router.post('/login', function (req, res, next) {
       logger.info('POST /api/auth/login -> 200 email=', email);
       res.json({
         token,
-        user: { id: user._id.toString(), email: user.email, name: user.name },
+        user: { id: user._id.toString(), email: user.email, name: user.name, role: user.role || 'user' },
       });
     })
     .catch(function (err) {

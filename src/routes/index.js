@@ -11,5 +11,6 @@ router.use('/auth', require('./auth'));
 router.use('/shop', require('./shop'));
 router.use('/cart', require('./cart'));
 router.use('/favorites', require('./favorites'));
+router.use('/admin', require('./admin'));
 
 module.exports = router;
