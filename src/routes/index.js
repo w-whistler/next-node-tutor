@@ -7,6 +7,9 @@ router.get('/', function (req, res) {
   res.json({ message: 'Store API', version: '1.0' });
 });
 
+router.use('/auth', require('./auth'));
 router.use('/shop', require('./shop'));
+router.use('/cart', require('./cart'));
+router.use('/favorites', require('./favorites'));
 
 module.exports = router;
